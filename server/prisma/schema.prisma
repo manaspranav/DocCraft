@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  forms     Form[]   @relation("UserForms")
+}
+
+model Form {
+  id         String     @id @default(cuid())
+  title      String
+  description String?
+   visibility  Visibility? @default(PUBLIC)
+  responseLimit Int?  @default(100)
+  deadline   DateTime?
+  createdAt  DateTime   @default(now())
+  creator    User?      @relation("UserForms", fields: [creatorId], references: [id])
+  creatorId  String?
+  questions  Question[]
+  responses  Response[]
+}
+
+model Question {
+  id       String       @id @default(cuid())
+  title    String
+  type     QuestionType
+  options  Json?
+  answer   Json?        // Restored optional answer field
+  form     Form         @relation(fields: [formId], references: [id])
+  formId   String
+  responseAnswers ResponseAnswer[]
+}
+
+enum QuestionType {
+  int
+  float
+  string
+  boolean
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+
+
+model Response {
+  id        String   @id @default(cuid())
+  form      Form     @relation(fields: [formId], references: [id])
+  formId    String
+  answers   ResponseAnswer[]
+  createdAt DateTime @default(now())
+}
+
+model ResponseAnswer {
+  id         String    @id @default(cuid())
+  response   Response  @relation(fields: [responseId], references: [id])
+  responseId String
+  question   Question  @relation(fields: [questionId], references: [id])
+  questionId String
+  answer     String    // or Json if you want to support multiple types
+}
